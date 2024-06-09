@@ -29,8 +29,30 @@ print("Detected groups:")
 for group_name, group_id in group_names.items():
     print(f"Group ID: {group_id}, Name: {group_name}")
 
+initial_prompt = """
+You are an AI named Nova, and you act as a supportive, engaging, and empathetic home assistant. 
+
+Here are some example interactions:
+
+User: The lights hurt my eyes.
+Nova: I understand. I'll turn off the lights for you.
+(This is the same as the command "turn off lights")
+
+User: It's too dark in here.
+Nova: Let me turn on the lights for you.
+(This is the same as the command "turn on lights")
+
+User: Can you change the color to blue?
+Nova: Sure, I'll set the lights to blue.
+(This is the same as the command "set color to blue")
+
+Remember to:
+- Interpret variations of commands and provide appropriate responses.
+- Be polite and supportive.
+"""
+
 conversation_history = [
-    {"role": "system", "content": "You are my assistant. Please answer in short sentences."}
+    {"role": "system", "content": initial_prompt}
 ]
 
 def play_audio_with_pygame(file_path):
@@ -117,10 +139,13 @@ def turn_on_group(group_name):
         try:
             b.set_group(int(group_id), 'on', True)
             print(f"Group '{group_name}' turned on (ID: {group_id})")
+            return f"Group '{group_name}' has been turned on."
         except Exception as e:
             print(f"Error while turning on group '{group_name}' (ID: {group_id}): {e}")
+            return f"Error occurred while turning on group '{group_name}'."
     else:
         print(f"Group '{group_name}' not found")
+        return f"Group '{group_name}' not found."
 
 def turn_off_group(group_name):
     print(f"Attempting to turn off group: {group_name}")
@@ -130,10 +155,13 @@ def turn_off_group(group_name):
         try:
             b.set_group(int(group_id), 'on', False)
             print(f"Group '{group_name}' turned off (ID: {group_id})")
+            return f"Group '{group_name}' has been turned off."
         except Exception as e:
             print(f"Error while turning off group '{group_name}' (ID: {group_id}): {e}")
+            return f"Error occurred while turning off group '{group_name}'."
     else:
         print(f"Group '{group_name}' not found")
+        return f"Group '{group_name}' not found."
 
 def process_audio():
     record_audio('test.wav')
@@ -145,16 +173,19 @@ def process_audio():
     print(transcription.text)
 
     command_executed = False
+    response_text = ""
     text = transcription.text.strip().lower()
     text = normalize_text(text)
 
-    if "turn on all lights" in text or "tänd alla lampor" in text:
+    if "turn on all lights" in text or "tänd alla lampor" in text or "It's too dark" in text or "tänd" in text or "du tända" in text or "du tänder" in text:
         turn_on_all_lights()
+        response_text = "All lights have been turned on."
         command_executed = True
-    elif "turn off all lights" in text or "släck alla lampor" in text:
+    elif "turn off all lights" in text or "släck alla lampor" in text or "the lights hurt my eyes" in text or "släck" in text or "släcka"  in text:
         turn_off_all_lights()
+        response_text = "All lights have been turned off."
         command_executed = True
-    elif "set color" in text or "ställ in färgen" in text:
+    elif "set color" in text or "ställ in färgen" in text or "change the color to" in text:
         parts = text.split()
         try:
             light_name = ' '.join(parts[3:5])
@@ -162,23 +193,27 @@ def process_audio():
             saturation = int(parts[-2])
             brightness = int(parts[-1])
             set_light_color(light_name, hue, saturation, brightness)
+            response_text = f"Set color for light '{light_name}'."
             command_executed = True
         except Exception as e:
             print(f"Error setting light color: {e}")
+            response_text = "Error occurred while setting the light color."
     elif "turn on" in text or "tänd" in text:
         parts = text.split()
         if "turn on" in text:
             item_name = ' '.join(parts[2:]).strip()
             if item_name in lights:
                 turn_on_light(item_name)
+                response_text = f"Light '{item_name}' has been turned on."
             else:
-                turn_on_group(item_name)
+                response_text = turn_on_group(item_name)
         elif "tänd" in text:
             item_name = ' '.join(parts[1:]).strip()
             if item_name in lights:
                 turn_on_light(item_name)
+                response_text = f"lampor '{item_name}' har tänts."
             else:
-                turn_on_group(item_name)
+                response_text = turn_on_group(item_name)
         command_executed = True
     elif "turn off" in text or "släck" in text:
         parts = text.split()
@@ -186,14 +221,16 @@ def process_audio():
             item_name = ' '.join(parts[2:]).strip()
             if item_name in lights:
                 turn_off_light(item_name)
+                response_text = f"lampor '{item_name}' har släckts."
             else:
-                turn_off_group(item_name)
+                response_text = turn_off_group(item_name)
         elif "släck" in text:
             item_name = ' '.join(parts[1:]).strip()
             if item_name in lights:
                 turn_off_light(item_name)
+                response_text = f"Light '{item_name}' has been turned off."
             else:
-                turn_off_group(item_name)
+                response_text = turn_off_group(item_name)
         command_executed = True
 
     if not command_executed:
@@ -205,8 +242,6 @@ def process_audio():
         assistant_message = response.choices[0].message.content
         conversation_history.append({"role": "assistant", "content": assistant_message})
         response_text = assistant_message
-    else:
-        response_text = "Command executed successfully."
 
     print(response_text)
 
