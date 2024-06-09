@@ -72,27 +72,6 @@ def set_light_color(light_name, hue, saturation, brightness):
     light.saturation = saturation
     light.brightness = brightness
 
-def load_commands(filename):
-    commands = {}
-    current_key = None
-    with open(filename, 'r', encoding='utf-8') as file:
-        for line in file:
-            line = line.strip()
-            if line.startswith('#'):
-                current_key = line[1:].strip()
-                commands[current_key] = []
-            elif current_key:
-                commands[current_key].append(line.lower())
-    return commands
-
-def match_command(transcription, commands):
-    transcription = transcription.lower()
-    for command, phrases in commands.items():
-        for phrase in phrases:
-            if phrase in transcription:
-                return command
-    return None
-
 def process_audio():
     record_audio('test.wav')
     audio_file = open('test.wav', "rb")
@@ -102,17 +81,16 @@ def process_audio():
     )
     print(transcription.text)
 
-    commands = load_commands('commands.txt')
-    matched_command = match_command(transcription.text, commands)
-
+    # Extract and execute commands for Philips Hue lights
     command_executed = False
-    if matched_command == "turn on all lights":
+    if "turn on all lights" in transcription.text.lower():
         turn_on_all_lights()
         command_executed = True
-    elif matched_command == "turn off all lights":
+    elif "turn off all lights" in transcription.text.lower():
         turn_off_all_lights()
         command_executed = True
-    elif matched_command == "set color of Vardagsrum 6 to hue 50000 saturation 254 brightness 200":
+    elif "set color" in transcription.text.lower():
+        # Example command: "set color of Vardagsrum 6 to hue 50000 saturation 254 brightness 200"
         parts = transcription.text.lower().split()
         try:
             light_name = ' '.join(parts[3:5])
@@ -124,6 +102,7 @@ def process_audio():
         except Exception as e:
             print(f"Error setting light color: {e}")
     elif "turn on" in transcription.text.lower():
+        # Example command: "turn on Vardagsrum 6"
         parts = transcription.text.lower().split()
         light_name = ' '.join(parts[2:])
         if light_name in lights:
@@ -132,6 +111,7 @@ def process_audio():
         else:
             print(f"Light {light_name} not found")
     elif "turn off" in transcription.text.lower():
+        # Example command: "turn off Vardagsrum 6"
         parts = transcription.text.lower().split()
         light_name = ' '.join(parts[2:])
         if light_name in lights:
