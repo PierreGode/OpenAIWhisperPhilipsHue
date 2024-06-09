@@ -8,6 +8,8 @@ import uuid
 import platform
 from threading import Thread
 from phue import Bridge
+from fuzzywuzzy import fuzz, process
+import re
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 client = OpenAI()
@@ -17,6 +19,15 @@ bridge_ip = '192.168.1.7'
 b = Bridge(bridge_ip)
 b.connect()
 lights = b.get_light_objects('name')
+groups = b.get_group()
+
+# Extract group names for fuzzy matching
+group_names = {group_info['name']: group_id for group_id, group_info in groups.items()}
+
+# Print all group names for debugging
+print("Detected groups:")
+for group_name, group_id in group_names.items():
+    print(f"Group ID: {group_id}, Name: {group_name}")
 
 conversation_history = [
     {"role": "system", "content": "You are my assistant. Please answer in short sentences."}
@@ -67,10 +78,62 @@ def turn_off_all_lights():
         light.on = False
 
 def set_light_color(light_name, hue, saturation, brightness):
-    light = lights[light_name]
-    light.hue = hue
-    light.saturation = saturation
-    light.brightness = brightness
+    if light_name in lights:
+        light = lights[light_name]
+        light.hue = hue
+        light.saturation = saturation
+        light.brightness = brightness
+    else:
+        print(f"Light {light_name} not found")
+
+def turn_on_light(light_name):
+    if light_name in lights:
+        lights[light_name].on = True
+    else:
+        print(f"Light {light_name} not found")
+
+def turn_off_light(light_name):
+    if light_name in lights:
+        lights[light_name].on = False
+    else:
+        print(f"Light {light_name} not found")
+
+def normalize_text(text):
+    return re.sub(r'[^\w\s]', '', text).strip()
+
+def match_group_name(input_name):
+    input_name = normalize_text(input_name).lower()
+    group_names_lower = {name.lower(): id for name, id in group_names.items()}
+    best_match = process.extractOne(input_name, group_names_lower.keys(), scorer=fuzz.token_sort_ratio)
+    if best_match and best_match[1] > 50:
+        return group_names_lower[best_match[0]]
+    return None
+
+def turn_on_group(group_name):
+    print(f"Attempting to turn on group: {group_name}")
+    group_id = match_group_name(group_name)
+    if group_id:
+        print(f"Matched group: {group_name} (ID: {group_id})")
+        try:
+            b.set_group(int(group_id), 'on', True)
+            print(f"Group '{group_name}' turned on (ID: {group_id})")
+        except Exception as e:
+            print(f"Error while turning on group '{group_name}' (ID: {group_id}): {e}")
+    else:
+        print(f"Group '{group_name}' not found")
+
+def turn_off_group(group_name):
+    print(f"Attempting to turn off group: {group_name}")
+    group_id = match_group_name(group_name)
+    if group_id:
+        print(f"Matched group: {group_name} (ID: {group_id})")
+        try:
+            b.set_group(int(group_id), 'on', False)
+            print(f"Group '{group_name}' turned off (ID: {group_id})")
+        except Exception as e:
+            print(f"Error while turning off group '{group_name}' (ID: {group_id}): {e}")
+    else:
+        print(f"Group '{group_name}' not found")
 
 def process_audio():
     record_audio('test.wav')
@@ -81,17 +144,18 @@ def process_audio():
     )
     print(transcription.text)
 
-    # Extract and execute commands for Philips Hue lights
     command_executed = False
-    if "turn on all lights" in transcription.text.lower():
+    text = transcription.text.strip().lower()
+    text = normalize_text(text)
+
+    if "turn on all lights" in text or "tänd alla lampor" in text:
         turn_on_all_lights()
         command_executed = True
-    elif "turn off all lights" in transcription.text.lower():
+    elif "turn off all lights" in text or "släck alla lampor" in text:
         turn_off_all_lights()
         command_executed = True
-    elif "set color" in transcription.text.lower():
-        # Example command: "set color of Vardagsrum 6 to hue 50000 saturation 254 brightness 200"
-        parts = transcription.text.lower().split()
+    elif "set color" in text or "ställ in färgen" in text:
+        parts = text.split()
         try:
             light_name = ' '.join(parts[3:5])
             hue = int(parts[-3])
@@ -101,28 +165,38 @@ def process_audio():
             command_executed = True
         except Exception as e:
             print(f"Error setting light color: {e}")
-    elif "turn on" in transcription.text.lower():
-        # Example command: "turn on Vardagsrum 6"
-        parts = transcription.text.lower().split()
-        light_name = ' '.join(parts[2:])
-        if light_name in lights:
-            lights[light_name].on = True
-            command_executed = True
-        else:
-            print(f"Light {light_name} not found")
-    elif "turn off" in transcription.text.lower():
-        # Example command: "turn off Vardagsrum 6"
-        parts = transcription.text.lower().split()
-        light_name = ' '.join(parts[2:])
-        if light_name in lights:
-            lights[light_name].on = False
-            command_executed = True
-        else:
-            print(f"Light {light_name} not found")
+    elif "turn on" in text or "tänd" in text:
+        parts = text.split()
+        if "turn on" in text:
+            item_name = ' '.join(parts[2:]).strip()
+            if item_name in lights:
+                turn_on_light(item_name)
+            else:
+                turn_on_group(item_name)
+        elif "tänd" in text:
+            item_name = ' '.join(parts[1:]).strip()
+            if item_name in lights:
+                turn_on_light(item_name)
+            else:
+                turn_on_group(item_name)
+        command_executed = True
+    elif "turn off" in text or "släck" in text:
+        parts = text.split()
+        if "turn off" in text:
+            item_name = ' '.join(parts[2:]).strip()
+            if item_name in lights:
+                turn_off_light(item_name)
+            else:
+                turn_off_group(item_name)
+        elif "släck" in text:
+            item_name = ' '.join(parts[1:]).strip()
+            if item_name in lights:
+                turn_off_light(item_name)
+            else:
+                turn_off_group(item_name)
+        command_executed = True
 
-    if command_executed:
-        response_text = "Command executed successfully."
-    else:
+    if not command_executed:
         conversation_history.append({"role": "user", "content": transcription.text})
         response = client.chat.completions.create(
             model='gpt-4o',
@@ -131,6 +205,8 @@ def process_audio():
         assistant_message = response.choices[0].message.content
         conversation_history.append({"role": "assistant", "content": assistant_message})
         response_text = assistant_message
+    else:
+        response_text = "Command executed successfully."
 
     print(response_text)
 
@@ -149,6 +225,12 @@ def process_audio():
     os.remove(speech_filename)
 
 while True:
-    thread = Thread(target=process_audio)
-    thread.start()
-    thread.join()
+    try:
+        thread = Thread(target=process_audio)
+        thread.start()
+        thread.join()
+    except KeyboardInterrupt:
+        print("Interrupted by user")
+        break
+    except Exception as e:
+        print(f"An error occurred: {e}")
