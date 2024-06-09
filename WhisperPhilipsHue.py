@@ -10,6 +10,7 @@ from threading import Thread
 from phue import Bridge
 from fuzzywuzzy import fuzz, process
 import re
+from langdetect import detect
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 client = OpenAI()
@@ -131,7 +132,7 @@ def match_group_name(input_name):
         return group_names_lower[best_match[0]]
     return None
 
-def turn_on_group(group_name):
+def turn_on_group(group_name, lang):
     print(f"Attempting to turn on group: {group_name}")
     group_id = match_group_name(group_name)
     if group_id:
@@ -139,15 +140,15 @@ def turn_on_group(group_name):
         try:
             b.set_group(int(group_id), 'on', True)
             print(f"Group '{group_name}' turned on (ID: {group_id})")
-            return f"Group '{group_name}' has been turned on."
+            return f"Group '{group_name}' has been turned on." if lang == 'en' else f"Grupp '{group_name}' har tänts."
         except Exception as e:
             print(f"Error while turning on group '{group_name}' (ID: {group_id}): {e}")
-            return f"Error occurred while turning on group '{group_name}'."
+            return f"Error occurred while turning on group '{group_name}'." if lang == 'en' else f"Fel uppstod när gruppen '{group_name}' tändes."
     else:
         print(f"Group '{group_name}' not found")
-        return f"Group '{group_name}' not found."
+        return f"Group '{group_name}' not found." if lang == 'en' else f"Grupp '{group_name}' hittades inte."
 
-def turn_off_group(group_name):
+def turn_off_group(group_name, lang):
     print(f"Attempting to turn off group: {group_name}")
     group_id = match_group_name(group_name)
     if group_id:
@@ -155,13 +156,13 @@ def turn_off_group(group_name):
         try:
             b.set_group(int(group_id), 'on', False)
             print(f"Group '{group_name}' turned off (ID: {group_id})")
-            return f"Group '{group_name}' has been turned off."
+            return f"Group '{group_name}' has been turned off." if lang == 'en' else f"Grupp '{group_name}' har släckts."
         except Exception as e:
             print(f"Error while turning off group '{group_name}' (ID: {group_id}): {e}")
-            return f"Error occurred while turning off group '{group_name}'."
+            return f"Error occurred while turning off group '{group_name}'." if lang == 'en' else f"Fel uppstod när gruppen '{group_name}' släcktes."
     else:
         print(f"Group '{group_name}' not found")
-        return f"Group '{group_name}' not found."
+        return f"Group '{group_name}' not found." if lang == 'en' else f"Grupp '{group_name}' hittades inte."
 
 def process_audio():
     record_audio('test.wav')
@@ -172,20 +173,22 @@ def process_audio():
     )
     print(transcription.text)
 
-    command_executed = False
-    response_text = ""
     text = transcription.text.strip().lower()
     text = normalize_text(text)
+    lang = detect(text)
+    
+    response_text = ""
+    command_executed = False
 
-    if "turn on all lights" in text or "tänd alla lampor" in text or "It's too dark" in text or "tänd" in text or "du tända" in text or "du tänder" in text:
+    if "turn on all lights" in text or "tänd alla lampor" in text or "turn on the lights" in text or "it's too dark" in text or "it's dark" in text or "du tända" in text or "du tänder" in text:
         turn_on_all_lights()
-        response_text = "All lights have been turned on."
+        response_text = "All lights have been turned on." if lang == 'en' else "Alla lampor har tänts."
         command_executed = True
-    elif "turn off all lights" in text or "släck alla lampor" in text or "the lights hurt my eyes" in text or "släck" in text or "släcka"  in text:
+    elif "turn off all lights" in text or "släck alla lampor" in text or "the lights hurt my eyes" in text or "the lights are too bright" in text or "du släcker" in text or "du släcka" in text:
         turn_off_all_lights()
-        response_text = "All lights have been turned off."
+        response_text = "All lights have been turned off." if lang == 'en' else "Alla lampor har släckts."
         command_executed = True
-    elif "set color" in text or "ställ in färgen" in text or "change the color to" in text:
+    elif "set color" in text or "ställ in färgen" in text:
         parts = text.split()
         try:
             light_name = ' '.join(parts[3:5])
@@ -193,44 +196,28 @@ def process_audio():
             saturation = int(parts[-2])
             brightness = int(parts[-1])
             set_light_color(light_name, hue, saturation, brightness)
-            response_text = f"Set color for light '{light_name}'."
+            response_text = f"Set color for light '{light_name}'." if lang == 'en' else f"Ställ in färgen för ljuset '{light_name}'."
             command_executed = True
         except Exception as e:
             print(f"Error setting light color: {e}")
-            response_text = "Error occurred while setting the light color."
-    elif "turn on" in text or "tänd" in text:
+            response_text = "Error occurred while setting the light color." if lang == 'en' else "Fel uppstod när färgen ställdes in."
+    elif "turn on" in text or "tänd" in text or "det är lite mörkt i"  in text:
         parts = text.split()
-        if "turn on" in text:
-            item_name = ' '.join(parts[2:]).strip()
-            if item_name in lights:
-                turn_on_light(item_name)
-                response_text = f"Light '{item_name}' has been turned on."
-            else:
-                response_text = turn_on_group(item_name)
-        elif "tänd" in text:
-            item_name = ' '.join(parts[1:]).strip()
-            if item_name in lights:
-                turn_on_light(item_name)
-                response_text = f"lampor '{item_name}' har tänts."
-            else:
-                response_text = turn_on_group(item_name)
+        item_name = ' '.join(parts[1:]).strip()
+        if item_name in lights:
+            turn_on_light(item_name)
+            response_text = f"Light '{item_name}' has been turned on." if lang == 'en' else f"Lampa '{item_name}' har tänts."
+        else:
+            response_text = turn_on_group(item_name, lang)
         command_executed = True
-    elif "turn off" in text or "släck" in text:
+    elif "turn off" in text or "släck" in text or "det är lite ljust i" in text or "it's too bright in" in text:
         parts = text.split()
-        if "turn off" in text:
-            item_name = ' '.join(parts[2:]).strip()
-            if item_name in lights:
-                turn_off_light(item_name)
-                response_text = f"lampor '{item_name}' har släckts."
-            else:
-                response_text = turn_off_group(item_name)
-        elif "släck" in text:
-            item_name = ' '.join(parts[1:]).strip()
-            if item_name in lights:
-                turn_off_light(item_name)
-                response_text = f"Light '{item_name}' has been turned off."
-            else:
-                response_text = turn_off_group(item_name)
+        item_name = ' '.join(parts[1:]).strip()
+        if item_name in lights:
+            turn_off_light(item_name)
+            response_text = f"Light '{item_name}' has been turned off." if lang == 'en' else f"Lampa '{item_name}' har släckts."
+        else:
+            response_text = turn_off_group(item_name, lang)
         command_executed = True
 
     if not command_executed:
