@@ -1,0 +1,14 @@
+openai
+utils
+warnings
+os
+time
+pygame
+uuid
+platform
+threading
+phue
+fuzzywuzzy
+python-Levenshtein
+re
+langdetect
