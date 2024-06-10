@@ -180,11 +180,11 @@ def process_audio():
     response_text = ""
     command_executed = False
 
-    if "turn on all lights" in text or "tänd alla lampor" in text or "turn on the lights" in text or "it's too dark" in text or "it's dark" in text or "du tända" in text or "du tänder" in text:
+    if "turn on all lights" in text or "tänd alla lampor" in text or "turn on the lights" in text or "it's too dark" in text or "it's dark" in text or "kan du tända" in text:
         turn_on_all_lights()
         response_text = "All lights have been turned on." if lang == 'en' else "Alla lampor har tänts."
         command_executed = True
-    elif "turn off all lights" in text or "släck alla lampor" in text or "the lights hurt my eyes" in text or "the lights are too bright" in text or "du släcker" in text or "du släcka" in text:
+    elif "turn off all lights" in text or "släck alla lampor" in text or "the lights hurt my eyes" in text or "the lights are too bright" in text or "att du släcker" in text:
         turn_off_all_lights()
         response_text = "All lights have been turned off." if lang == 'en' else "Alla lampor har släckts."
         command_executed = True
