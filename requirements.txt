@@ -1,11 +1,6 @@
 openai
-os
 pygame
-uuid
-platform
-threading
 phue
 fuzzywuzzy
-re
 langdetect
 setuptools
