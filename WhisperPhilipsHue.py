@@ -180,11 +180,32 @@ def process_audio():
     response_text = ""
     command_executed = False
 
-    if "turn on all lights" in text or "tänd alla lampor" in text or "turn on the lights" in text or "it's too dark" in text or "it's dark" in text or "kan du tända" in text:
+    # Specific commands
+    if "tänd i" in text:
+        parts = text.split()
+        item_name = ' '.join(parts[2:]).strip()
+        if item_name in lights:
+            turn_on_light(item_name)
+            response_text = f"Light '{item_name}' has been turned on." if lang == 'en' else f"Lampa '{item_name}' har tänts."
+        else:
+            response_text = turn_on_group(item_name, lang)
+        command_executed = True
+    elif "släck i" in text:
+        parts = text.split()
+        item_name = ' '.join(parts[2:]).strip()
+        if item_name in lights:
+            turn_off_light(item_name)
+            response_text = f"Light '{item_name}' has been turned off." if lang == 'en' else f"Lampa '{item_name}' har släckts."
+        else:
+            response_text = turn_off_group(item_name, lang)
+        command_executed = True
+    
+    # General commands
+    elif "turn on all lights" in text or "tänd alla lampor" in text or "turn on the lights" in text or "it's too dark" in text or "it's dark" in text or "kan du tända" in text or "tänd" in text:
         turn_on_all_lights()
         response_text = "All lights have been turned on." if lang == 'en' else "Alla lampor har tänts."
         command_executed = True
-    elif "turn off all lights" in text or "släck alla lampor" in text or "the lights hurt my eyes" in text or "the lights are too bright" in text or "att du släcker" in text:
+    elif "turn off all lights" in text or "släck alla lampor" in text or "the lights hurt my eyes" in text or "the lights are too bright" in text or "att du släcker" in text or "släck" in text:
         turn_off_all_lights()
         response_text = "All lights have been turned off." if lang == 'en' else "Alla lampor har släckts."
         command_executed = True
@@ -201,24 +222,6 @@ def process_audio():
         except Exception as e:
             print(f"Error setting light color: {e}")
             response_text = "Error occurred while setting the light color." if lang == 'en' else "Fel uppstod när färgen ställdes in."
-    elif "turn on" in text or "tänd" in text or "det är lite mörkt i"  in text:
-        parts = text.split()
-        item_name = ' '.join(parts[1:]).strip()
-        if item_name in lights:
-            turn_on_light(item_name)
-            response_text = f"Light '{item_name}' has been turned on." if lang == 'en' else f"Lampa '{item_name}' har tänts."
-        else:
-            response_text = turn_on_group(item_name, lang)
-        command_executed = True
-    elif "turn off" in text or "släck" in text or "det är lite ljust i" in text or "it's too bright in" in text:
-        parts = text.split()
-        item_name = ' '.join(parts[1:]).strip()
-        if item_name in lights:
-            turn_off_light(item_name)
-            response_text = f"Light '{item_name}' has been turned off." if lang == 'en' else f"Lampa '{item_name}' har släckts."
-        else:
-            response_text = turn_off_group(item_name, lang)
-        command_executed = True
 
     if not command_executed:
         conversation_history.append({"role": "user", "content": transcription.text})
