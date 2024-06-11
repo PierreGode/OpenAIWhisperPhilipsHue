@@ -4,3 +4,4 @@ phue
 fuzzywuzzy
 langdetect
 setuptools
+SpeechRecognition
