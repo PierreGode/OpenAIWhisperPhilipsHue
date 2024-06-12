@@ -1,6 +1,8 @@
 # OpenAIWhisperPhilipsHue
 Voice GPT4o OpenAIWhisperPhilipsHue
 
+Work in Progress
+
 Clone repo to Windows machine
 ```
   git clone https://github.com/PierreGode/OpenAIWhisperPhilipsHue.git
