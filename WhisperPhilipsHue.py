@@ -12,6 +12,7 @@ from fuzzywuzzy import fuzz, process
 import re
 from langdetect import detect
 
+# Suppress deprecation warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 client = OpenAI()
 
@@ -30,6 +31,7 @@ print("Detected groups:")
 for group_name, group_id in group_names.items():
     print(f"Group ID: {group_id}, Name: {group_name}")
 
+# Initial system prompt for the assistant model
 initial_prompt = """
 You are an AI named Nova, and you act as a supportive, engaging, and empathetic home assistant. 
 
@@ -56,6 +58,7 @@ conversation_history = [
     {"role": "system", "content": initial_prompt}
 ]
 
+# Play audio using pygame (Windows)
 def play_audio_with_pygame(file_path):
     pygame.mixer.init()
     time.sleep(0.5)
@@ -67,6 +70,7 @@ def play_audio_with_pygame(file_path):
         time.sleep(1)
     pygame.mixer.quit()
 
+# Play audio using ALSA (Linux)
 def play_audio_with_alsa(file_path):
     try:
         import alsaaudio
@@ -92,14 +96,17 @@ def play_audio_with_alsa(file_path):
 
 is_windows = platform.system() == "Windows"
 
+# Turn on all lights
 def turn_on_all_lights():
     for light in lights.values():
         light.on = True
 
+# Turn off all lights
 def turn_off_all_lights():
     for light in lights.values():
         light.on = False
 
+# Set light color
 def set_light_color(light_name, hue, saturation, brightness):
     if light_name in lights:
         light = lights[light_name]
@@ -109,21 +116,25 @@ def set_light_color(light_name, hue, saturation, brightness):
     else:
         print(f"Light {light_name} not found")
 
+# Turn on a specific light
 def turn_on_light(light_name):
     if light_name in lights:
         lights[light_name].on = True
     else:
         print(f"Light {light_name} not found")
 
+# Turn off a specific light
 def turn_off_light(light_name):
     if light_name in lights:
         lights[light_name].on = False
     else:
         print(f"Light {light_name} not found")
 
+# Normalize text by removing punctuation and converting to lowercase
 def normalize_text(text):
     return re.sub(r'[^\w\s]', '', text).strip()
 
+# Match input group name with the closest group name using fuzzy matching
 def match_group_name(input_name):
     input_name = normalize_text(input_name).lower()
     group_names_lower = {name.lower(): id for name, id in group_names.items()}
@@ -132,6 +143,7 @@ def match_group_name(input_name):
         return group_names_lower[best_match[0]]
     return None
 
+# Turn on a specific group of lights
 def turn_on_group(group_name, lang):
     print(f"Attempting to turn on group: {group_name}")
     group_id = match_group_name(group_name)
@@ -148,6 +160,7 @@ def turn_on_group(group_name, lang):
         print(f"Group '{group_name}' not found")
         return f"Group '{group_name}' not found." if lang == 'en' else f"Grupp '{group_name}' hittades inte."
 
+# Turn off a specific group of lights
 def turn_off_group(group_name, lang):
     print(f"Attempting to turn off group: {group_name}")
     group_id = match_group_name(group_name)
@@ -164,6 +177,7 @@ def turn_off_group(group_name, lang):
         print(f"Group '{group_name}' not found")
         return f"Group '{group_name}' not found." if lang == 'en' else f"Grupp '{group_name}' hittades inte."
 
+# Process audio and execute appropriate light commands
 def process_audio():
     record_audio('test.wav')
     audio_file = open('test.wav', "rb")
@@ -180,49 +194,37 @@ def process_audio():
     response_text = ""
     command_executed = False
 
-    # Specific commands
-    if "tänd i" in text:
+    # General Commands
+    if re.search(r'\bturn on all lights\b', text) or re.search(r'\btänd alla lampor\b', text) or re.search(r'\bturn on the lights\b', text) or re.search(r'\bit\'s too dark\b', text) or re.search(r'\bit\'s dark\b', text) or re.search(r'\bkan du tända\b', text) or re.search(r'\bjag vill att du tänder\b', text):
+        turn_on_all_lights()
+        response_text = "All lights have been turned on." if lang == 'en' else "Alla lampor har tänts."
+        command_executed = True
+    elif re.search(r'\bturn off all lights\b', text) or re.search(r'\bsläck alla lampor\b', text) or re.search(r'\bthe lights hurt my eyes\b', text) or re.search(r'\bthe lights are too bright\b', text) or re.search(r'\batt du släcker\b', text):
+        turn_off_all_lights()
+        response_text = "All lights have been turned off." if lang == 'en' else "Alla lampor har släckts."
+        command_executed = True
+    
+    # Specific Group Commands
+    elif re.search(r'\bturn on \b[a-z\s]*', text) or re.search(r'\btänd i\b[a-z\s]*', text) or re.search(r'\bkan du tända\b[a-z\s]*', text):
         parts = text.split()
-        item_name = ' '.join(parts[2:]).strip()
+        item_name = ' '.join(parts[2:]).strip() # Extract group name from the text
         if item_name in lights:
             turn_on_light(item_name)
             response_text = f"Light '{item_name}' has been turned on." if lang == 'en' else f"Lampa '{item_name}' har tänts."
         else:
             response_text = turn_on_group(item_name, lang)
         command_executed = True
-    elif "släck i" in text:
+    elif re.search(r'\bturn off \b[a-z\s]*', text) or re.search(r'\bsläck i\b[a-z\s]*', text) or re.search(r'\bkan du släcka\b[a-z\s]*', text):
         parts = text.split()
-        item_name = ' '.join(parts[2:]).strip()
+        item_name = ' '.join(parts[2:]).strip() # Extract group name from the text
         if item_name in lights:
             turn_off_light(item_name)
             response_text = f"Light '{item_name}' has been turned off." if lang == 'en' else f"Lampa '{item_name}' har släckts."
         else:
             response_text = turn_off_group(item_name, lang)
         command_executed = True
-    
-    # General commands
-    elif "turn on all lights" in text or "tänd alla lampor" in text or "turn on the lights" in text or "it's too dark" in text or "it's dark" in text or "kan du tända" in text or "tänd" in text:
-        turn_on_all_lights()
-        response_text = "All lights have been turned on." if lang == 'en' else "Alla lampor har tänts."
-        command_executed = True
-    elif "turn off all lights" in text or "släck alla lampor" in text or "the lights hurt my eyes" in text or "the lights are too bright" in text or "att du släcker" in text or "släck" in text:
-        turn_off_all_lights()
-        response_text = "All lights have been turned off." if lang == 'en' else "Alla lampor har släckts."
-        command_executed = True
-    elif "set color" in text or "ställ in färgen" in text:
-        parts = text.split()
-        try:
-            light_name = ' '.join(parts[3:5])
-            hue = int(parts[-3])
-            saturation = int(parts[-2])
-            brightness = int(parts[-1])
-            set_light_color(light_name, hue, saturation, brightness)
-            response_text = f"Set color for light '{light_name}'." if lang == 'en' else f"Ställ in färgen för ljuset '{light_name}'."
-            command_executed = True
-        except Exception as e:
-            print(f"Error setting light color: {e}")
-            response_text = "Error occurred while setting the light color." if lang == 'en' else "Fel uppstod när färgen ställdes in."
 
+    # If no command is executed, continue the conversation through the assistant
     if not command_executed:
         conversation_history.append({"role": "user", "content": transcription.text})
         response = client.chat.completions.create(
@@ -235,6 +237,7 @@ def process_audio():
 
     print(response_text)
 
+    # Generate speech from the response text
     speech_response = client.audio.speech.create(
         model="tts-1",
         voice="nova",
@@ -242,6 +245,8 @@ def process_audio():
     )
     speech_filename = f"speech_{uuid.uuid4()}.mp3"
     speech_response.stream_to_file(speech_filename)
+    
+    # Play the generated speech
     if is_windows:
         play_audio_with_pygame(speech_filename)
     else:
@@ -249,6 +254,7 @@ def process_audio():
     audio_file.close()
     os.remove(speech_filename)
 
+# Main loop to continuously listen and process audio
 while True:
     try:
         thread = Thread(target=process_audio)
