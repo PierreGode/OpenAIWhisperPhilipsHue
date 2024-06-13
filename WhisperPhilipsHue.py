@@ -1,3 +1,4 @@
+import json
 from openai import OpenAI
 from utils import record_audio, play_audio
 import warnings
@@ -31,9 +32,13 @@ print("Detected groups:")
 for group_name, group_id in group_names.items():
     print(f"Group ID: {group_id}, Name: {group_name}")
 
+# Load commands from JSON file with explicit encoding
+with open('commands_lang.json', 'r', encoding='utf-8') as file:
+    commands = json.load(file)
+
 # Initial system prompt for the assistant model
 initial_prompt = """
-You are an AI named Nova, and you act as a supportive, engaging, and empathetic home assistant. 
+You are an AI named Nova, and you act as a supportive, engaging, and empathetic home assistant.
 
 Here are some example interactions:
 
@@ -98,17 +103,20 @@ is_windows = platform.system() == "Windows"
 
 # Turn on all lights
 def turn_on_all_lights():
+    print("Executing turn_on_all_lights")  # Debug statement
     for light in lights.values():
         light.on = True
 
 # Turn off all lights
 def turn_off_all_lights():
+    print("Executing turn_off_all_lights")  # Debug statement
     for light in lights.values():
         light.on = False
 
 # Set light color
 def set_light_color(light_name, hue, saturation, brightness):
     if light_name in lights:
+        print(f"Setting color for light {light_name} to hue: {hue}, saturation: {saturation}, brightness: {brightness}")  # Debug statement
         light = lights[light_name]
         light.hue = hue
         light.saturation = saturation
@@ -119,6 +127,7 @@ def set_light_color(light_name, hue, saturation, brightness):
 # Turn on a specific light
 def turn_on_light(light_name):
     if light_name in lights:
+        print(f"Turning on light {light_name}")  # Debug statement
         lights[light_name].on = True
     else:
         print(f"Light {light_name} not found")
@@ -126,19 +135,21 @@ def turn_on_light(light_name):
 # Turn off a specific light
 def turn_off_light(light_name):
     if light_name in lights:
+        print(f"Turning off light {light_name}")  # Debug statement
         lights[light_name].on = False
     else:
         print(f"Light {light_name} not found")
 
 # Normalize text by removing punctuation and converting to lowercase
 def normalize_text(text):
-    return re.sub(r'[^\w\s]', '', text).strip()
+    return re.sub(r'[^\w\s]', '', text).strip().lower()
 
 # Match input group name with the closest group name using fuzzy matching
 def match_group_name(input_name):
-    input_name = normalize_text(input_name).lower()
-    group_names_lower = {name.lower(): id for name, id in group_names.items()}
+    input_name = normalize_text(input_name)
+    group_names_lower = {normalize_text(name): id for name, id in group_names.items()}
     best_match = process.extractOne(input_name, group_names_lower.keys(), scorer=fuzz.token_sort_ratio)
+    print(f"Best match for '{input_name}': {best_match}")  # Debug statement
     if best_match and best_match[1] > 50:
         return group_names_lower[best_match[0]]
     return None
@@ -177,6 +188,15 @@ def turn_off_group(group_name, lang):
         print(f"Group '{group_name}' not found")
         return f"Group '{group_name}' not found." if lang == 'en' else f"Grupp '{group_name}' hittades inte."
 
+# Check if text matches any command patterns for a specific action
+def match_command(text, command_patterns):
+    print(f"Matching text '{text}' against patterns {command_patterns}")  # Debug statement
+    for pattern in command_patterns:
+        if re.search(fr'\b{pattern}', text):  # Match patterns only if they form a complete word boundary
+            print(f"Pattern '{pattern}' matched")  # Debug statement
+            return True
+    return False
+
 # Process audio and execute appropriate light commands
 def process_audio():
     record_audio('test.wav')
@@ -185,57 +205,65 @@ def process_audio():
         model='whisper-1',
         file=audio_file
     )
-    print(transcription.text)
+    print("Transcript:", transcription.text)
 
     text = transcription.text.strip().lower()
     text = normalize_text(text)
     lang = detect(text)
+    print("Detected language:", lang)  # Debug statement
     
     response_text = ""
     command_executed = False
 
-    # General Commands
-    if re.search(r'\bturn on all lights\b', text) or re.search(r'\btänd alla lampor\b', text) or re.search(r'\bturn on the lights\b', text) or re.search(r'\bit\'s too dark\b', text) or re.search(r'\bit\'s dark\b', text) or re.search(r'\bkan du tända\b', text) or re.search(r'\bjag vill att du tänder\b', text):
-        turn_on_all_lights()
-        response_text = "All lights have been turned on." if lang == 'en' else "Alla lampor har tänts."
-        command_executed = True
-    elif re.search(r'\bturn off all lights\b', text) or re.search(r'\bsläck alla lampor\b', text) or re.search(r'\bthe lights hurt my eyes\b', text) or re.search(r'\bthe lights are too bright\b', text) or re.search(r'\batt du släcker\b', text):
-        turn_off_all_lights()
-        response_text = "All lights have been turned off." if lang == 'en' else "Alla lampor har släckts."
-        command_executed = True
+    # Load commands for detected language or fallback to English
+    lang_commands = commands.get(lang, commands['en'])
+
+    # Prioritize Group Commands First
+    for pattern in lang_commands['turn_on_group']:
+        match = re.search(pattern.replace("{group}", "(.+)"), text)
+        if match:
+            group_name = match.group(1).strip()
+            print(f"Extracted group name for turning on: {group_name}")  # Debug statement
+            response_text = turn_on_group(group_name, lang)
+            command_executed = True
+            break
     
-    # Specific Group Commands
-    elif re.search(r'\bturn on \b[a-z\s]*', text) or re.search(r'\btänd i\b[a-z\s]*', text) or re.search(r'\bkan du tända\b[a-z\s]*', text):
-        parts = text.split()
-        item_name = ' '.join(parts[2:]).strip() # Extract group name from the text
-        if item_name in lights:
-            turn_on_light(item_name)
-            response_text = f"Light '{item_name}' has been turned on." if lang == 'en' else f"Lampa '{item_name}' har tänts."
-        else:
-            response_text = turn_on_group(item_name, lang)
-        command_executed = True
-    elif re.search(r'\bturn off \b[a-z\s]*', text) or re.search(r'\bsläck i\b[a-z\s]*', text) or re.search(r'\bkan du släcka\b[a-z\s]*', text):
-        parts = text.split()
-        item_name = ' '.join(parts[2:]).strip() # Extract group name from the text
-        if item_name in lights:
-            turn_off_light(item_name)
-            response_text = f"Light '{item_name}' has been turned off." if lang == 'en' else f"Lampa '{item_name}' har släckts."
-        else:
-            response_text = turn_off_group(item_name, lang)
-        command_executed = True
+    if not command_executed:
+        for pattern in lang_commands['turn_off_group']:
+            match = re.search(pattern.replace("{group}", "(.+)"), text)
+            if match:
+                group_name = match.group(1).strip()
+                print(f"Extracted group name for turning off: {group_name}")  # Debug statement
+                response_text = turn_off_group(group_name, lang)
+                command_executed = True
+                break
+
+    # General Commands
+    if not command_executed:
+        if match_command(text, lang_commands['turn_on_all_lights']):
+            print(f"Matched command for turning on all lights: {text}")  # Debug statement
+            turn_on_all_lights()
+            response_text = "All lights have been turned on." if lang == 'en' else "Alla lampor har tänts."
+            command_executed = True
+        elif match_command(text, lang_commands['turn_off_all_lights']):
+            print(f"Matched command for turning off all lights: {text}")  # Debug statement
+            turn_off_all_lights()
+            response_text = "All lights have been turned off." if lang == 'en' else "Alla lampor har släckts."
+            command_executed = True
 
     # If no command is executed, continue the conversation through the assistant
     if not command_executed:
+        print("No command executed. Passing to assistant.")  # Debug statement
         conversation_history.append({"role": "user", "content": transcription.text})
         response = client.chat.completions.create(
-            model='gpt-4o',
+            model='gpt-4',
             messages=conversation_history
         )
         assistant_message = response.choices[0].message.content
         conversation_history.append({"role": "assistant", "content": assistant_message})
         response_text = assistant_message
 
-    print(response_text)
+    print("Response text:", response_text)  # Debug statement
 
     # Generate speech from the response text
     speech_response = client.audio.speech.create(
