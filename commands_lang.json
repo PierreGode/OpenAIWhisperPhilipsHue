@@ -1,0 +1,70 @@
+{
+    "en": {
+        "turn_on_all_lights": [
+            "turn on all lights", 
+            "turn on the lights", 
+            "it's too dark", 
+            "it's dark", 
+            "can you turn on lights", 
+            "i want you to turn on lights"
+        ],
+        "turn_off_all_lights": [
+            "turn off all lights", 
+            "the lights hurt my eyes", 
+            "the lights are too bright", 
+            "can you turn off", 
+            "i want you to turn off"
+        ],
+        "set_color": [
+            "set color"
+        ],
+        "turn_on_group": [
+            "turn on {group} lights", 
+            "turn on lights in {group}", 
+            "can you turn on lights in {group}", 
+            "i want you to turn on lights in {group}"
+        ],
+        "turn_off_group": [
+            "turn off {group} lights", 
+            "turn off lights in {group}", 
+            "can you turn off lights in {group}", 
+            "i want you to turn off lights in {group}"
+        ]
+    },
+    "sv": {
+        "turn_on_all_lights": [
+            "tänd",
+            "tänd allt",
+            "tänd alla lampor", 
+            "kan du tända", 
+            "jag vill att du tänder"
+        ],
+        "turn_off_all_lights": [
+            "släck", 
+            "släck allt", 
+            "släck alla lampor", 
+            "kan du släcka", 
+            "jag vill att du släcker"
+        ],
+        "set_color": [
+            "ställ in färgen"
+        ],
+        "turn_on_group": [
+            "tänd lampor i {group}", 
+            "kan du tända lampor i {group}",
+            "kan du tända lampor {group}", 
+            "jag vill att du tänder lampor i {group}",
+            "jag vill att du tänder i {group}",
+            "jag vill att du tänder {group}"
+        ],
+        "turn_off_group": [
+            "släck lampor i {group}", 
+            "kan du släcka lampor i {group}",
+            "kan du släcka {group}",  
+            "jag vill att du släcker lampor i {group}",
+            "jag vill att du släcker i {group}",
+            "jag vill att du släcker {group}", 
+            "släck {group}"
+        ]
+    }
+}
