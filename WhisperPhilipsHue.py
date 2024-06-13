@@ -36,6 +36,9 @@ for group_name, group_id in group_names.items():
 with open('commands_lang.json', 'r', encoding='utf-8') as file:
     commands = json.load(file)
 
+# Set preferred language for fallback
+preferred_language = 'sv'  # Change this to 'en' or any other supported language
+
 # Initial system prompt for the assistant model
 initial_prompt = """
 You are an AI named Nova, and you act as a supportive, engaging, and empathetic home assistant.
@@ -137,8 +140,6 @@ def turn_off_light(light_name):
     if light_name in lights:
         print(f"Turning off light {light_name}")  # Debug statement
         lights[light_name].on = False
-    else:
-        print(f"Light {light_name} not found")
 
 # Normalize text by removing punctuation and converting to lowercase
 def normalize_text(text):
@@ -209,14 +210,18 @@ def process_audio():
 
     text = transcription.text.strip().lower()
     text = normalize_text(text)
-    lang = detect(text)
-    print("Detected language:", lang)  # Debug statement
+    detected_lang = detect(text)
+    print("Detected language:", detected_lang)  # Debug statement
+
+    # Use detected language if available, otherwise fall back to preferred language
+    lang = detected_lang if detected_lang in commands else preferred_language
+    print("Using language:", lang)  # Debug statement
     
     response_text = ""
     command_executed = False
 
-    # Load commands for detected language or fallback to English
-    lang_commands = commands.get(lang, commands['en'])
+    # Load commands for the determined language
+    lang_commands = commands.get(lang, commands[preferred_language])
 
     # Prioritize Group Commands First
     for pattern in lang_commands['turn_on_group']:
