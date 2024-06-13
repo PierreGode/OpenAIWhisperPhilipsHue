@@ -6,3 +6,4 @@ fuzzywuzzy
 langdetect
 setuptools
 SpeechRecognition
+python-Levenshtein
