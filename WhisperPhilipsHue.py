@@ -37,7 +37,7 @@ with open('commands_lang.json', 'r', encoding='utf-8') as file:
     commands = json.load(file)
 
 # Set preferred language for fallback
-preferred_language = 'sv'  # Change this to 'en' or any other supported language
+preferred_language = 'en'  # Change this to 'en' or any other supported language
 
 # Initial system prompt for the assistant model
 initial_prompt = """
