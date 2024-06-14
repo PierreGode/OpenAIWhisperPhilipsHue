@@ -33,7 +33,7 @@ for group_name, group_id in group_names.items():
     print(f"Group ID: {group_id}, Name: {group_name}")
 
 # Load commands from JSON file with explicit encoding
-with open('commands_lang.json', 'r', encoding='utf-8') as file:
+with open('openaiwhisperphilipshue/commands_lang.json', 'r', encoding='utf-8') as file:
     commands = json.load(file)
 
 # Set preferred language for fallback
