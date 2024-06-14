@@ -66,5 +66,69 @@
             "jag vill att du släcker {group}", 
             "släck {group}"
         ]
+    },
+    "es": {
+        "turn_on_all_lights": [
+            "enciende todas las luces",
+            "enciende las luces",
+            "está demasiado oscuro",
+            "está oscuro",
+            "¿puedes encender las luces?",
+            "quiero que enciendas las luces"
+        ],
+        "turn_off_all_lights": [
+            "apaga todas las luces",
+            "las luces me duelen los ojos",
+            "las luces son demasiado brillantes",
+            "¿puedes apagar las luces?",
+            "quiero que apagues las luces"
+        ],
+        "set_color": [
+            "establecer color"
+        ],
+        "turn_on_group": [
+            "enciende las luces de {group}",
+            "enciende las luces en {group}",
+            "¿puedes encender las luces en {group}?",
+            "quiero que enciendas las luces en {group}"
+        ],
+        "turn_off_group": [
+            "apaga las luces de {group}",
+            "apaga las luces en {group}",
+            "¿puedes apagar las luces en {group}?",
+            "quiero que apagues las luces en {group}"
+        ]
+    },
+    "de": {
+        "turn_on_all_lights": [
+            "alle Lichter einschalten",
+            "schalte die Lichter ein",
+            "es ist zu dunkel",
+            "es ist dunkel",
+            "kannst du die Lichter einschalten?",
+            "ich möchte, dass du die Lichter einschaltest"
+        ],
+        "turn_off_all_lights": [
+            "alle Lichter ausschalten",
+            "die Lichter tun meinen Augen weh",
+            "die Lichter sind zu hell",
+            "kannst du die Lichter ausschalten?",
+            "ich möchte, dass du die Lichter ausschaltest"
+        ],
+        "set_color": [
+            "Farbe einstellen"
+        ],
+        "turn_on_group": [
+            "schalte die Lichter in {group} ein",
+            "schalte die Lichter in {group} ein",
+            "kannst du die Lichter in {group} einschalten?",
+            "ich möchte, dass du die Lichter in {group} einschaltest"
+        ],
+        "turn_off_group": [
+            "schalte die Lichter in {group} aus",
+            "schalte die Lichter in {group} aus",
+            "kannst du die Lichter in {group} ausschalten?",
+            "ich möchte, dass du die Lichter in {group} ausschaltest"
+        ]
     }
 }
