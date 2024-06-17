@@ -1,6 +1,8 @@
 # OpenAIWhisperPhilipsHue
 Voice GPT4o OpenAIWhisperPhilipsHue
 
+[![CodeQL](https://github.com/PierreGode/OpenAIWhisperPhilipsHue/actions/workflows/codeql.yml/badge.svg)](https://github.com/PierreGode/OpenAIWhisperPhilipsHue/actions/workflows/codeql.yml)
+
 Work in Progress
 
 Clone repo to Windows machine
