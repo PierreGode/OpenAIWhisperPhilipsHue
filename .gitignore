@@ -108,3 +108,8 @@ $RECYCLE.BIN/
 *.sublime-project
 *.sublime-workspace
 *.code-workspace
+notebooks/
+*.wav
+*/transcription.txt
+transcription.txt
+**/*.pyc
