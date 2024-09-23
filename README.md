@@ -22,7 +22,7 @@ $env:OPENAI_API_KEY="sk-proj-"
 
 $env:OPENAI_API_KEY="sk-"
 $env:HUE_BRIDGE_IP="192.168.0.XX"
-$env:MODEL="gpt-3.5-turbo"
+$env:MODEL="gpt-4o-mini"
 $env:WHISPER_MODEL="whisper-1"
 
 ```

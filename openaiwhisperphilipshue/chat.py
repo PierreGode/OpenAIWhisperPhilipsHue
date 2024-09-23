@@ -35,7 +35,7 @@ class Chat():
         _openai_api_key = key if key is not None \
             else os.getenv("OPENAI_API_KEY")
         _model_name = model_name if model_name is not None \
-            else 'gpt-3.5-turbo-1106'
+            else 'gpt-4o-mini'
         _temperature = temperature
         self.llm = ChatOpenAI(
             openai_api_key=_openai_api_key,
